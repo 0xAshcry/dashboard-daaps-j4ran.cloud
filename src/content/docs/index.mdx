@@ -1,0 +1,37 @@
+---
+title: Welcome to j4rannode
+description: Get started building your docs site with Starlight.
+template: splash
+hero:
+  tagline: Securely validating one block at a time since 2023
+  image:
+    file: ../../assets/logo.png
+  actions:
+    - text: Our services
+      link: /services/
+---
+import AboutJaran from '../../components/about-jaran.astro';
+import ProjectGrid from '../../components/project-grid.astro';
+import Project from '../../components/project.astro';
+
+<ProjectGrid title="What we've done">
+  <Project
+    handle="Dymension"
+    cite="https://dymension.xyz/"
+  >
+    Dymension is a layer 1 blockchain connecting users and liquidity with modular blockchains called RollApps.
+  </Project>
+  <Project
+    handle="0G_Labs"
+    cite="https://0g.ai/"
+  >
+    0G Labs is the first decentralized AI operating system, furthered by 0G Foundation, designed to power the future of AI.
+</Project>
+</ProjectGrid>
+
+<AboutJaran title="Brought to you by">
+j4rannode securely validating one block at a time since 2023
+
+[© 2025 j4rannode](https://astro.build/)
+
+</AboutJaran>
