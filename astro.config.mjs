@@ -4,8 +4,7 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://0xAshcry.github.io',
-	base: 'dashboard-daaps-j4ran.cloud',
+	site: 'http://daaps-j4ran.cloud/',
 	integrations: [
 		starlight({
 			favicon: '/favicon.png',
