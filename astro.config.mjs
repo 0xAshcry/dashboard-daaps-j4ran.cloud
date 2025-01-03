@@ -16,9 +16,14 @@ export default defineConfig({
 			sidebar: [
 				{ label: 'SERVICES', slug: 'services' },
 				{
+					label: '0G LABS',
+					items: [
+						{ label: 'Installation', slug: 'services/0g/installation' },
+					],
+				},
+				{
 					label: 'STORY',
 					items: [
-						// Each item here is one entry in the navigation menu.
 						{ label: 'Installation', slug: 'services/story/installation' },
 					],
 				},

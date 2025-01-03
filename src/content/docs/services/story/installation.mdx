@@ -1,10 +1,191 @@
 ---
-title: Services
-description: this is services
+title: Story Protocol
+description: Story node installation
 ---
 
-lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+[![Story Protocol](https://pbs.twimg.com/profile_banners/1471420332862885889/1735272939/1500x500)](https://x.com/StoryProtocol)
 
-## How to ngentot
+## System Requirements
+| Hardware    | Requirement |
+| ----------- | ----------- |
+| CPU         | 4 Cores     |
+| RAM         | 16 GB       |
+| Disk        | 500 GB      |
+| Bandwith    | 25 MB/s     |
 
-- Read [about how-to guides](https://diataxis.fr/how-to-guides/) in the Diátaxis framework
+## Node Installation
+### Install Dependencies
+```bash
+sudo apt update
+sudo apt-get update
+sudo apt install curl git make jq build-essential gcc unzip wget lz4 aria2 -y
+```
+
+### Download Story-Geth Binary
+```bash
+cd $HOME
+wget https://github.com/piplabs/story-geth/releases/download/v0.11.0/geth-linux-amd64
+[ ! -d "$HOME/go/bin" ] && mkdir -p $HOME/go/bin
+if ! grep -q "$HOME/go/bin" $HOME/.bash_profile; then
+  echo "export PATH=$PATH:/usr/local/go/bin:~/go/bin" >> ~/.bash_profile
+fi
+chmod +x geth-linux-amd64
+mv $HOME/geth-linux-amd64 $HOME/go/bin/story-geth
+source $HOME/.bash_profile
+story-geth version
+```
+
+### Download Story Binary
+```bash
+cd $HOME
+rm -rf story-linux-amd64
+wget https://github.com/piplabs/story/releases/download/v0.13.0/story-linux-amd64
+[ ! -d "$HOME/go/bin" ] && mkdir -p $HOME/go/bin
+if ! grep -q "$HOME/go/bin" $HOME/.bash_profile; then
+  echo "export PATH=$PATH:/usr/local/go/bin:~/go/bin" >> ~/.bash_profile
+fi
+chmod +x story-linux-amd64
+sudo cp $HOME/story-linux-amd64 $HOME/go/bin/story
+source $HOME/.bash_profile
+story version
+```
+
+### Init Odyssey Node
+```bash
+story init --network odyssey --moniker "Your_moniker_name"
+```
+
+### Create story-geth service file
+```bash
+sudo tee /etc/systemd/system/story-geth.service > /dev/null <<EOF
+[Unit]
+Description=Story Geth Client
+After=network.target
+
+[Service]
+User=root
+ExecStart=/root/go/bin/story-geth --odyssey --syncmode full
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+### Create story service file
+```bash
+sudo tee /etc/systemd/system/story.service > /dev/null <<EOF
+[Unit]
+Description=Story Consensus Client
+After=network.target
+
+[Service]
+User=root
+ExecStart=/root/go/bin/story run
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+### Reload and start story-geth
+```bash
+sudo systemctl daemon-reload && \
+sudo systemctl start story-geth && \
+sudo systemctl enable story-geth && \
+sudo systemctl status story-geth
+```
+
+### Reload and start story
+```bash
+sudo systemctl daemon-reload && \
+sudo systemctl start story && \
+sudo systemctl enable story && \
+sudo systemctl status story
+```
+
+### Check sync status
+```bash
+curl localhost:26657/status | jq
+```
+
+### Check block sync left
+```bash
+while true; do
+    local_height=$(curl -s localhost:26657/status | jq -r '.result.sync_info.latest_block_height');
+    network_height=$(curl -s https://odyssey.storyrpc.io/status | jq -r '.result.sync_info.latest_block_height');
+    blocks_left=$((network_height - local_height));
+    echo -e "\033[1;38mYour node height:\033[0m \033[1;34m$local_height\033[0m | \033[1;35mNetwork height:\033[0m \033[1;36m$network_height\033[0m | \033[1;29mBlocks left:\033[0m \033[1;31m$blocks_left\033[0m";
+    sleep 5;
+done
+```
+
+## Create Validator
+#### Export validator public key & private key
+:::note
+By default, when you run story init a validator key is created for you. To view your validator key, run the following command:
+```bash
+story validator export
+```
+:::
+This will print out your validator public key file in compressed and uncompressed formats. By default, we use the hex-encoded compressed key for public identification.
+```bash
+Compressed Public Key (hex): 03bdc7b8940babe9226d52d7fa299a1faf3d64a82f809889256c8f146958a63984
+Compressed Public Key (base64): A73HuJQLq+kibVLX+imaH689ZKgvgJiJJWyPFGlYpjmE
+Uncompressed Public Key (hex): 04bdc7b8940babe9226d52d7fa299a1faf3d64a82f809889256c8f146958a6398496b9e2af0a3a1d199c3cc1d09ee899336a530c185df6b46a9735b25e79a493af
+EVM Address: 0x9EacBe2C3B1eb0a9FC14106d97bd3A1F89efdDCc
+Validator Address: storyvaloper1p470h0jtph4n5hztallp8vznq8ehylsw9vpddx
+Delegator Address: story1p470h0jtph4n5hztallp8vznq8ehylswtr4vxd
+```
+_In addition, if you want to export the derived EVM private key of your validator into the default data config directory, please run the following:_
+```bash
+story validator export --export-evm-key
+```
+Note that to participate in consensus, at least 1 IP must be staked (equivalent to 1000000000000000000 wei)!
+get yours at https://faucet.story.foundation/
+
+### Create Validator
+```bash
+story validator create --stake 1024000000000000000000 --private-key "your_private_key" --moniker "your_moniker_name"
+```
+:::caution
+Backup your validator key that located at /root/.story/story/config/priv_validator_key.json
+:::
+
+### Validator Staking
+```bash
+story validator stake \
+   --validator-pubkey "VALIDATOR_PUB_KEY_IN_HEX" \
+   --stake 1024000000000000000000 \
+   --private-key xxxxxxxxxxxxxx
+```
+Replace VALIDATOR_PUB_KEY_IN_HEX Amount: 1024000000000000000000=1024 IP Token
+
+### Check your validator on explorer
+Get your validator info
+```bash
+curl -s localhost:26657/status | jq -r '.result.validator_info'
+```
+Paste the hex validator addres you got to the https://testnet.story.explorers.guru/ search bar
+
+## Delete Node
+:::danger
+This will remove all your data, make sure to backup your data before doing this
+:::
+```bash
+sudo systemctl stop story-geth
+sudo systemctl stop story
+sudo systemctl disable story-geth
+sudo systemctl disable story
+sudo rm /etc/systemd/system/story-geth.service
+sudo rm /etc/systemd/system/story.service
+sudo systemctl daemon-reload
+sudo rm -rf $HOME/.story
+sudo rm $HOME/go/bin/story-geth
+sudo rm $HOME/go/bin/story
+```
